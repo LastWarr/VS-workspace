@@ -30,7 +30,7 @@ def plotCube(plotType,data):
         'Profit variance:%{customdata[7]:$.5s}',
         "Retail: %{customdata[0]:0.0f}",
         "Retail variance:%{customdata[6]:0.0f}",
-        "%Retail var2: %{customdata[8]:0.2%}",
+        # "%Retail var2: %{customdata[8]:0.2%}",
         "%Retail var: %{customdata[1]:0.2%}",
         
     ]) 
@@ -60,6 +60,7 @@ def plotCube(plotType,data):
       showlegend=True,
       hovertemplate= HoverTemplate
     )
-    # fig_profit1.write_html('retail_cube_dark_n.html')
+    
+    fig_profit1.write_html(plotType+'_cube_dark_n.html')
     # fig_profit1.show()
     return fig_profit1

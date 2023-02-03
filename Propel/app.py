@@ -43,12 +43,24 @@ models_choice = st.sidebar.selectbox("Choose Model", models)
 # models_choice = 'OUTLANDER 1000'
 m_data = model_data[model_data['Model'].values == models_choice]
 
+
+
+# models_choice = st.sidebar.selectbox("Choose Model", models)
+
 #  Static values 
 behind_forecast = 0.8
 ncypenalty = .075
 
 plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
 
+retail = [int(plot_data.Retail.min()),int(plot_data.Retail.max())]
+#Retail filter
+# print(model_data.head())
+# model_data
+retail = st.sidebar.slider("Retail", int(retail[0]), int(retail[1]), (int(retail[0]),(int(retail[1]))))
+print(retail)
+plot_data = plot_data[(plot_data.Retail >= retail[0]) & (plot_data.Retail <= retail[1])]
+print(plot_data.head())
 # plot_data.to_csv('plotdata.csv',index=False)
 # Add header and a subheader
 st.header("Propel: Programs & Promotions ")
@@ -70,7 +82,7 @@ def load_page():
             maxRetail = plot_data.Retail.max().astype(int)
             print(minRetail," ",maxRetail)
             # retail_range = st.slider('Choose Retail range',minRetail, maxRetail, (minRetail, maxRetail))
-            # retail_range = st.slider('Enter Retail range',min_value= minRetail,max_value=maxRetail)
+            # retail_range = st.slider('Enter Retail range',min_value= minRetail,max_value=maxRetail
 
             st.plotly_chart(profit_graph, use_container_width=True)
         with col2:
