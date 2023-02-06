@@ -6,6 +6,9 @@ Created on Thu Nov 17 08:16:30 2022
 """
 from logic import promoGraph
 import plotly.graph_objects as go
+import warnings
+
+warnings.filterwarnings("ignore")
 
 def getModelList(data):
     return data['Model'].drop_duplicates()

@@ -8,7 +8,9 @@ import pandas as pd
 import numpy as np
 from data_transformation import * 
 import plotly.graph_objects as go
+import warnings
 
+warnings.filterwarnings("ignore")
 ##############################################################################
 # Aggregate the daily data to weekly ( Not required after we receive forecast at weekly granularity)
 def getWeeklyDataWithCYNCY(data,grp_col):

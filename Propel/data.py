@@ -2,7 +2,9 @@ import pandas as pd
 from logic import *
 from data_transformation import *
 from dateutil.relativedelta import relativedelta
+import warnings
 
+warnings.filterwarnings("ignore")
 # from pathlib import Path
 
 # base_path = Path(__file__).parent
