@@ -1,6 +1,0 @@
-streamlit
-pandas
-datetime
-random
-warnings
-numpy
