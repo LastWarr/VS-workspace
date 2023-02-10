@@ -8,7 +8,7 @@ from logic import promoGraph
 import plotly.graph_objects as go
 import warnings
 
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 def getModelList(data):
     return data['Model'].drop_duplicates()
@@ -41,14 +41,14 @@ def plotCube(plotType,data):
     if plotType=="retail":
         plotdata = promoGraph(data=data, dataType='retail')
         # graphTitle = "Retail Cube"
-        zaxisTitle = "Retail"
+        zaxisTitle = "Retail Cube"
 
 
     # PROFIT CUBE SETTINGS
     else:
         plotdata = promoGraph(data=data, dataType='profit')
         # graphTitle = "Profitability Cube"
-        zaxisTitle = "Profit"
+        zaxisTitle = "Profit Cube"
 
     fig_profit1 = go.Figure(data=plotdata)
     fig_profit1.update_layout(scene = dict(
@@ -58,12 +58,14 @@ def plotCube(plotType,data):
                       legend_title_text = 'Promo Amount',
                       template='plotly_dark', 
                       # title=graphTitle,
+                      height = 500,
                       margin=dict(r=20, b=10, l=10))
     fig_profit1.update_traces(
       showlegend=True,
-      hovertemplate= HoverTemplate
+      hovertemplate= HoverTemplate,
+      
     )
     
-    fig_profit1.write_html(plotType+'_cube_dark_n.html')
+    # fig_profit1.write_html(plotType+'_cube_dark_n.html')
     # fig_profit1.show()
     return fig_profit1
