@@ -108,7 +108,7 @@ if __name__ == "__main__":
             profit = [int(plot_data.Profitability.min()),int(plot_data.Profitability.max())]
             retail = st.slider("Profitability", int(profit[0]), int(profit[1]), (int(profit[0]),(int(profit[1]))))
             # print(retail)
-            plot_data = plot_data[(plot_data.Profitability >= profit[0]-99) & (plot_data.Profitability <= profit[1]+.99)]
+            plot_data = plot_data[(plot_data.Profitability >= profit[0]-.99) & (plot_data.Profitability <= profit[1]+.99)]
 
     # if st.button('Plot Graph'):         
     with st.container():
