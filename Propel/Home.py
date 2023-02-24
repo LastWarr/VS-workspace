@@ -93,7 +93,7 @@ if __name__ == "__main__":
             state_choice = st.selectbox("State",states)
     
     plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
-    plot_data.to_csv('plotData.csv',index=False)
+    # plot_data.to_csv('plotData.csv',index=False)
     # print(plot_data.head())
     with st.container():
         with retailslidercol:
