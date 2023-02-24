@@ -47,7 +47,7 @@ if __name__ == "__main__":
     dealer_price = model_data.groupby(['Model']).agg(Dealer_price = ('DealerPrice_Avg','mean'),Margin = ('Margin','mean'))
     dealer_price.Dealer_price = dealer_price.Dealer_price.round(2)
     dealer_price = dealer_price.to_dict(orient="index")  # Dealer price dictionary
-
+    # print(dealer_price)
     ###############################################################################
 
     # List models in the data
@@ -62,33 +62,55 @@ if __name__ == "__main__":
     minRetail = 0
     maxRetail = 1000
 
-    coecol, modelcol,rightcol = st.columns([1, 1, 3])
-    retailslidercol,profitslidercol,placeholdercol = st.columns([1,1,3])
+    coecol, modelcol,countrycol,statecol = st.columns([1, 1, 1, 1])
+    retailslidercol,placeholdercol,profitslidercol,placeholdercol1 = st.columns([1,1,1,1])
     profitcol, retailcol = st.columns(2)
-    
+    hover_text = ''
+
+
+    # fig.data[0].on_hover(update_hover_text)
+
+
     with st.container():
         with coecol:
             # Choose the coefficient of elasticity - Currently an option later will be integrated to the calculation
             # coe = 5
-            coe = st.number_input('Coefficient of elasticity',-10.0,10.0,value=-5.0)
+            coe = st.number_input('Elasticity coeffiecient',-10.0,10.0,value=-5.0)
             coe = abs(coe)
+        
         with modelcol:
             # streamlit code for choosing model
-            models_choice = st.selectbox("Choose Model", models)
+            models_choice = st.selectbox("Model", models)
             # models_choice = 'OUTLANDER 1000'
             m_data = model_data[model_data['Model'].values == models_choice]
-            plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
-        # with rightcol:
+        
+        with  countrycol:
+            country = ['NA','US','CA']
+            country_choice = st.selectbox("Country",country)
+
+        with statecol:
+            states = ['All','TX','NY','CA','FL','AZ','UT']
+            state_choice = st.selectbox("State",states)
     
+    plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
+    plot_data.to_csv('plotData.csv',index=False)
+    # print(plot_data.head())
     with st.container():
         with retailslidercol:
             retail = [int(plot_data.Retail.min()),int(plot_data.Retail.max())]
             retail = st.slider("Retail", int(retail[0]), int(retail[1]), (int(retail[0]),(int(retail[1]))))
             # print(retail)
-            plot_data = plot_data[(plot_data.Retail >= retail[0]) & (plot_data.Retail <= retail[1])]
-    
+            plot_data = plot_data[(plot_data.Retail >= retail[0]-.99) & (plot_data.Retail <= retail[1]+.99)]
+            # plot_data.to_csv('plotData.csv',index = 'False')
         # time.sleep(3)
     # st.success('Done!')
+        with profitslidercol:
+            profit = [int(plot_data.Profitability.min()),int(plot_data.Profitability.max())]
+            retail = st.slider("Profitability", int(profit[0]), int(profit[1]), (int(profit[0]),(int(profit[1]))))
+            # print(retail)
+            plot_data = plot_data[(plot_data.Profitability >= profit[0]-99) & (plot_data.Profitability <= profit[1]+.99)]
+
+    # if st.button('Plot Graph'):         
     with st.container():
         with profitcol:
             st.subheader('Profit cube')
@@ -96,11 +118,14 @@ if __name__ == "__main__":
 
             minRetail = plot_data.Retail.min().astype(int)
             maxRetail = plot_data.Retail.max().astype(int)
-            print(minRetail," ",maxRetail)
+            # print(minRetail," ",maxRetail)
             # retail_range = st.slider('Choose Retail range',minRetail, maxRetail, (minRetail, maxRetail))
             # retail_range = st.slider('Enter Retail range',min_value= minRetail,max_value=maxRetail
 
-            st.plotly_chart(profit_graph, use_container_width=True,)
+            st.plotly_chart(profit_graph, use_container_width=True)
+            # profit_graph.data[0].on_hover(update_hover_text)
+            # print(hover_text)
+
         with retailcol:
             st.subheader('Retail cube')
             retail_graph = plotCube('retail',plot_data)
@@ -109,4 +134,13 @@ if __name__ == "__main__":
             # profit_range = st.slider('Choose Profit range', minProfit,maxProfit,(minProfit,maxProfit))
 
             st.plotly_chart(retail_graph, use_container_width=True)
+            # retail_graph.data[0].on_hover(update_hover_text)
+    
+    # with st.container():
+        # st.write(hover_text)
+
+
+    # if 'plotData' not in st.session_state:
+    st.session_state['plotData'] = plot_data
+    
     st.snow()

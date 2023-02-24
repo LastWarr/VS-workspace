@@ -4,7 +4,8 @@ Created on Thu Nov 17 08:16:30 2022
 
 @author: dwaradi
 """
-from logic import promoGraph
+from logic import *
+import plotly.express as px
 import plotly.graph_objects as go
 import warnings
 
@@ -16,6 +17,13 @@ def getModelList(data):
 def getModelYearList(data):
     return data['Model_year'].drop_duplicates()
 
+def update_hover_text(trace, points, state):
+    global hover_text
+    if points.point_inds:
+        hover_text = points.trace.text[points.point_inds[0]]
+    else:
+        hover_text = ''
+    return hover_text
 """
 ==========
 Function to create the profit and retail cube 
@@ -50,8 +58,8 @@ def plotCube(plotType,data):
         # graphTitle = "Profitability Cube"
         zaxisTitle = "Profit Cube"
 
-    fig_profit1 = go.Figure(data=plotdata)
-    fig_profit1.update_layout(scene = dict(
+    fig = go.Figure(data=plotdata)
+    fig.update_layout(scene = dict(
                       xaxis_title='Duration',
                       yaxis_title='Weeks',
                       zaxis_title=zaxisTitle),
@@ -60,12 +68,30 @@ def plotCube(plotType,data):
                       # title=graphTitle,
                       height = 500,
                       margin=dict(r=20, b=10, l=10))
-    fig_profit1.update_traces(
+    fig.update_traces(
       showlegend=True,
       hovertemplate= HoverTemplate,
       
     )
-    
-    # fig_profit1.write_html(plotType+'_cube_dark_n.html')
-    # fig_profit1.show()
-    return fig_profit1
+    # hover_text = fig.data[0].on_hover(update_hover_text)
+    # print(hover_text)
+    # fig.write_html(plotType+'_cube_dark_n.html')
+    # fig.show()
+    return fig
+
+def plot_Forecast(baseline_date,selected_data,graph_type):
+    dt = baseline_with_forecast(baseline_date,selected_data)
+    # create a line graph with two y-axes
+    if (graph_type == 'cum'):
+        fig_forecast = px.line(dt, x='Date', y=['cum_Forecast', 'cum_Adj_Forecast'], title='Cumulative Forecast vs Promo Adj Forecast')
+        # fig_forecast.update_layout(yaxis=dict(title='Forecast'), yaxis2=dict(title='Promo Adjusted Forecast', side='right', overlaying='y'))
+        fig_forecast.update_traces(mode="lines", hovertemplate ='%{y:.2f}')
+    # fig_forecast.show()
+    else:
+        fig_forecast = px.line(dt, x='Date', y=['Forecast', 'Adj_Forecast'], title='Forecast vs Promo Adj Forecast')
+        fig_forecast.update_traces(mode="markers+lines", hovertemplate ='%{y:.2f}')
+    fig_forecast.update_layout(yaxis=dict(title='Forecast Units'), yaxis2=dict(title='Promo Adjusted Forecast', side='right', overlaying='y'))
+    # fig_forecast.update_traces(mode="markers+lines", hovertemplate ='%{y:.2f}')
+    fig_forecast.update_layout(hovermode="x unified")
+
+    return fig_forecast
