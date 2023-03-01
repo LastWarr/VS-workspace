@@ -93,21 +93,17 @@ if __name__ == "__main__":
             state_choice = st.selectbox("State",states)
     
     plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
-    # plot_data.to_csv('plotData.csv',index=False)
-    # print(plot_data.head())
+   
+  
     with st.container():
         with retailslidercol:
             retail = [int(plot_data.Retail.min()),int(plot_data.Retail.max())]
             retail = st.slider("Retail", int(retail[0]), int(retail[1]), (int(retail[0]),(int(retail[1]))))
-            # print(retail)
             plot_data = plot_data[(plot_data.Retail >= retail[0]-.99) & (plot_data.Retail <= retail[1]+.99)]
-            # plot_data.to_csv('plotData.csv',index = 'False')
-        # time.sleep(3)
-    # st.success('Done!')
+           
         with profitslidercol:
             profit = [int(plot_data.Profitability.min()),int(plot_data.Profitability.max())]
-            retail = st.slider("Profitability", int(profit[0]), int(profit[1]), (int(profit[0]),(int(profit[1]))))
-            # print(retail)
+            profit = st.slider("Profitability", int(profit[0]), int(profit[1]), (int(profit[0]),(int(profit[1]))))
             plot_data = plot_data[(plot_data.Profitability >= profit[0]-.99) & (plot_data.Profitability <= profit[1]+.99)]
 
     # if st.button('Plot Graph'):         
