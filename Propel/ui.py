@@ -47,21 +47,23 @@ def plotCube(plotType,data):
     ]) 
   #RETAIL CUBE SETTINGS
     if plotType=="retail":
-        plotdata = promoGraph(data=data, dataType='retail')
+        plotdata,date_axis,duration_axis = promoGraph(data=data, dataType='retail')
         # graphTitle = "Retail Cube"
+
         zaxisTitle = "Retail Cube"
 
 
     # PROFIT CUBE SETTINGS
     else:
-        plotdata = promoGraph(data=data, dataType='profit')
+        plotdata,date_axis,duration_axis = promoGraph(data=data, dataType='profit')
         # graphTitle = "Profitability Cube"
         zaxisTitle = "Profit Cube"
 
     fig = go.Figure(data=plotdata)
+
     fig.update_layout(scene = dict(
                       xaxis_title='Duration',
-                      yaxis_title='Weeks',
+                      yaxis_title='Weekly Start Date',
                       zaxis_title=zaxisTitle),
                       legend_title_text = 'Promo Amount',
                       template='plotly_dark', 
@@ -70,6 +72,8 @@ def plotCube(plotType,data):
                       margin=dict(r=20, b=10, l=10))
     fig.update_traces(
       showlegend=True,
+      x = duration_axis,
+      y = date_axis,
       hovertemplate= HoverTemplate,
       
     )

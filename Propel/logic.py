@@ -170,6 +170,8 @@ def promoGraph(data, dataType):
   cols = ['Retail', 'Retail_var','Profitability','Date','PromoAmt','Duration','incremental_Retail','incremental_Profit','Retail_var1']
   x = [x for x in range(1, 16, 1)] 
 
+  date_axis = data.Date.unique()
+  duration_axis = data.Duration.unique()
   if dataType=="profit":
     for i in range(len(promoDiscount)): 
       promo = data[data.PromoAmt == promoDiscount[i]] #segments the data by promo amount 
@@ -198,7 +200,7 @@ def promoGraph(data, dataType):
                                  customdata = custdata.cdata.values,
                                  name='Promo' + str(promoDiscount[i])))
   
-  return plotData
+  return plotData,date_axis,duration_axis
 
 
 
