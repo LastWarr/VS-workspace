@@ -8,60 +8,12 @@ import pandas as pd
 import numpy as np
 from data_transformation import * 
 import plotly.graph_objects as go
+import streamlit as st
 # import warnings
 
 # warnings.filterwarnings("ignore")
-##############################################################################
-# Aggregate the daily data to weekly ( Not required after we receive forecast at weekly granularity)
-def getWeeklyDataWithCYNCY(data,grp_col):
-    if 'CY_NCY' in grp_col:
-        data_agg = data.groupby(grp_col).agg(
-                                    Retail = ('Serial_number','count'),
-                                    MSRP_Avg = ('MSRP','mean'),
-                                    DealerPrice_Avg = ('DealerPrice','mean'),
-                                    Margin = ('Margin','mean')
-                                ).reset_index().sort_values(['Model','Date'])
-    else:
-        data_agg = data.groupby(grp_col).agg( DealerPrice_Avg = ('DealerPrice_Avg','mean'),
-                                                         Retail = ('Retail','sum'),
-                                                         Margin = ('Margin','mean')).reset_index().sort_values(['Model','Date'])
-
-    return data_agg
 
 ################################################################################
-
-def getModelData(df):
-    # Assign dummy margin 
-    # Outlander 1000 - .3 , Outlander 850 - .25, Outlander 450 - .18
-    df = assignMargin(df,'OUTLANDER 450',0.18)
-    df = assignMargin(df,'OUTLANDER 850',0.25)
-    df = assignMargin(df,'OUTLANDER 1000',0.30)
-
-    # Aggregate the SKU level data to Weekly data grouped by Model, CY_NCY
-    grp_col = ['Model','CY_NCY','Date'] 
-    data_agg = getWeeklyDataWithCYNCY(df,grp_col)
-
-    # Dummy data code
-    # Delete code once forecast is obtained
-    # Separating the CY and NCY units in Retail
-    df_pivot = pd.pivot_table(data_agg, index=['Model', 'Date'],
-                              columns=['CY_NCY'],  
-                              aggfunc={'Retail': np.sum},
-                              fill_value=0)
-
-    df_pivot.columns = ['_'.join(map(str, c)).strip('_') for c in df_pivot] # Name the pivoted columns
-    df_pivot.reset_index(inplace=True)
-
-    # Granularity at weekly level per model  - Each date has 1 row for a model
-    grp_col = ['Model','Date']
-    data_agg1 = getWeeklyDataWithCYNCY(data_agg,grp_col)
-
-
-    model_data = data_agg1.merge(df_pivot,on=['Model','Date']) # Merge to get the data used for scenario modelling
-    model_data['cumForecast']=model_data.groupby(['Model'])['Retail'].cumsum()
-    model_data.rename(columns={'Retail':'Forecast','Retail_CY':'Forecast_CY',
-                  'Retail_NCY':'Forecast_NCY'},inplace=True)
-    return model_data
 
 def promo_uplift(dealer_price,coe,promo_amt):
     return coe * promo_amt/dealer_price
@@ -71,6 +23,7 @@ def adj_Forecast(forecast,promo_uplift,penalty):
 
 def profit(units,margin,dealer_price):
     return round(units*margin*dealer_price,2)
+
 
 def profit_calculations(model_input,promo_amt,duration,dealer_price,coe,ncypenalty):
 

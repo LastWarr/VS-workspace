@@ -8,6 +8,18 @@ import warnings
 
 warnings.filterwarnings("ignore")
 st.set_page_config(layout="wide")
+edit_footer = """
+<style>
+footer{
+    visibility : hidden;
+}
+footer:before{
+    content: 'version 2.4';
+    display:block;
+    position:relative;
+}
+</style>
+"""
 # Load data
 
 #Retail filter
@@ -24,16 +36,22 @@ st.set_page_config(layout="wide")
    
 if __name__ == "__main__":
     # session = create_session_object()
-
+    st.title('Prototype v2.5')
+    st.markdown(edit_footer,unsafe_allow_html=True)
     datafile = 'Propel/Static_files/Prototype_dt18-21.csv'
-    df = pd.read_csv(datafile,low_memory=False)
+    model_data = load_country_data(datafile)
 
-    # Modify data
-    df['Date'] = df.apply(lambda x: getWeeklyStartDate(x.Registration_date), axis=1) # Get weekly start date
-    df['Year'] = pd.DatetimeIndex(df['Registration_date']).year
-    df = df.assign(CY_NCY=df.apply(getCYNCY, axis=1)) # Assign Current, Non current flag for ORV
+    state_forecast_file = 'Propel/Static_files/forecast_state.csv'
+    state_forecast = load_state_data(state_forecast_file)
+    
+    # df = pd.read_csv(datafile,low_memory=False)
 
-    model_data = getModelData(df) # All the model and forecast data
+    # # Modify data
+    # df['Date'] = df.apply(lambda x: getWeeklyStartDate(x.Registration_date), axis=1) # Get weekly start date
+    # df['Year'] = pd.DatetimeIndex(df['Registration_date']).year
+    # df = df.assign(CY_NCY=df.apply(getCYNCY, axis=1)) # Assign Current, Non current flag for ORV
+
+    # model_data = getModelData(df) # All the model and forecast data
 
     # Intitializing Promo amount from $250 to $3000  
     promo_amt = [x for x in range(0, 3250, 250)] # Promo range 0 - 3000 with increment of 250
@@ -49,12 +67,26 @@ if __name__ == "__main__":
     dealer_price = dealer_price.to_dict(orient="index")  # Dealer price dictionary
     # print(dealer_price)
     ###############################################################################
+    data_input = st.radio("Choose Data",('Country Data','State wise dummy data'))
+    if data_input == 'Country Data':
+        # country_input_data = st.checkbox('Country Data',value=True)
+        country_input_data = True
+        state_input_data = False
+    else:
+        # state_input_data = st.checkbox('State wise dummy data')
+        country_input_data = False
+        state_input_data = True
 
     # List models in the data
-    models = model_data['Model'].drop_duplicates()
-
-    # models_choice = st.sidebar.selectbox("Choose Model", models)
-
+    # models = model_data['Model'].drop_duplicates()
+    if country_input_data:
+        models = model_data['Model'].drop_duplicates()
+        # models_choice = st.sidebar.selectbox("Choose Model", models)
+    if state_input_data:
+        models = state_forecast['Model'].unique().tolist()
+        state_list = state_forecast['State'].unique().tolist()
+        state_list.insert(0, "All")
+        country = state_forecast['Country'].drop_duplicates()
     #  Static values 
     behind_forecast = 0.8
     ncypenalty = .075
@@ -63,10 +95,9 @@ if __name__ == "__main__":
     maxRetail = 1000
 
     coecol, modelcol,countrycol,statecol = st.columns([1, 1, 1, 1])
-    retailslidercol,placeholdercol,profitslidercol,placeholdercol1 = st.columns([1,1,1,1])
+    minretailcol,placeholdercol1,maxretailcol,placeholdercol2,minprofitcol,placeholdercol3,maxprofitcol,placeholdercol4 = st.columns([1,.1,1,1.5,1,0.1,1,1.5])
+    # minretailcol, maxretailcol,dummycol = st.columns([1,1,6])
     profitcol, retailcol = st.columns(2)
-    hover_text = ''
-
 
     # fig.data[0].on_hover(update_hover_text)
 
@@ -75,40 +106,90 @@ if __name__ == "__main__":
         with coecol:
             # Choose the coefficient of elasticity - Currently an option later will be integrated to the calculation
             # coe = 5
-            coe = st.number_input('Elasticity coeffiecient',-10.0,10.0,value=-5.0)
+            coe = st.number_input('Elasticity coeffiecient',0.0,15.0,value=5.0)
             coe = abs(coe)
         
         with modelcol:
             # streamlit code for choosing model
             models_choice = st.selectbox("Model", models)
             # models_choice = 'OUTLANDER 1000'
-            m_data = model_data[model_data['Model'].values == models_choice]
-        
+            if country_input_data:
+                m_data = model_data[model_data['Model'].values == models_choice]
+            elif state_input_data:
+                m_data = state_forecast[state_forecast['Model'].values == models_choice]
+
         with  countrycol:
-            country = ['NA','US','CA']
-            country_choice = st.selectbox("Country",country)
+            # country = ['NA','US','CA']
+            if state_input_data:
+                country_choice = st.selectbox("Country",country)
+                m_data = m_data[m_data['Country'].values == country_choice]
 
         with statecol:
-            states = ['All','TX','NY','CA','FL','AZ','UT']
-            state_choice = st.selectbox("State",states)
+            # states = ['All','TX','NY','CA','FL','AZ','UT']
+            if state_input_data:  
+                state_choice = st.selectbox("State",state_list)
+                              
+                if state_choice == 'All':
+                    all_state = m_data.groupby(['Model','Date','Country']).agg(Forecast_CY = ('Forecast_CY','sum'),
+                                                        Forecast_NCY = ('Forecast_NCY','sum'),
+                                                        Forecast = ('Forecast','sum')).reset_index()
+                    all_state['State'] = 'All'
+                    all_state['Country'] = 'US'
+                    all_state['cumForecast'] = all_state.groupby(['Model','State'])['Forecast'].cumsum()
+                    m_data = all_state
+                else:
+                    m_data = m_data[m_data['State'].values == state_choice]
+            
     
     plot_data = get_profitability_data(m_data=m_data,promo_amt=promo_amt,duration=duration,dealer_price=dealer_price,coe=coe,ncypenalty=ncypenalty)
     # plot_data.to_csv('plotData.csv',index=False)
     # print(plot_data.head())
     with st.container():
-        with retailslidercol:
-            retail = [int(plot_data.Retail.min()),int(plot_data.Retail.max())]
-            retail = st.slider("Retail", int(retail[0]), int(retail[1]), (int(retail[0]),(int(retail[1]))))
-            # print(retail)
-            plot_data = plot_data[(plot_data.Retail >= retail[0]-.99) & (plot_data.Retail <= retail[1]+.99)]
-            # plot_data.to_csv('plotData.csv',index = 'False')
-        # time.sleep(3)
-    # st.success('Done!')
-        with profitslidercol:
-            profit = [int(plot_data.Profitability.min()),int(plot_data.Profitability.max())]
-            retail = st.slider("Profitability", int(profit[0]), int(profit[1]), (int(profit[0]),(int(profit[1]))))
-            # print(retail)
-            plot_data = plot_data[(plot_data.Profitability >= profit[0]-.99) & (plot_data.Profitability <= profit[1]+.99)]
+        retail_min = int(plot_data.Retail.min())
+        retail_max = int(plot_data.Retail.max())
+
+        with minretailcol:
+            n_retail_min = st.number_input("Retail min", value=retail_min,min_value = retail_min,max_value=retail_max-1,step=5)
+            
+        with maxretailcol:
+            n_retail_max = st.number_input("Retail max", value=retail_max,min_value =retail_min+1,max_value=retail_max,step=5)
+
+        # with retailslidercol:
+        #     retail = st.slider("Retail", min_value = retail_min,max_value= retail_max,value=[n_retail_min,n_retail_max])
+
+        plot_data = plot_data[(plot_data.Retail >= n_retail_min-.99) & (plot_data.Retail <= n_retail_max+.99)]
+
+        profit_min = int(plot_data.Profitability.min())
+        profit_max = int(plot_data.Profitability.max())
+
+
+        with minprofitcol:
+            n_profit_min = st.number_input("Profitability min", value=profit_min,min_value = profit_min,max_value=profit_max-1,step=5)
+            
+        with maxprofitcol:
+            n_profit_max = st.number_input("Profitability max", value=profit_max,min_value = profit_min+1,max_value=profit_max,step=5)
+
+        # with profitslidercol:            
+        #     profit = st.slider("Profitability",min_value=profit_min,max_value=profit_max,value=[n_profit_min,n_profit_max] )
+
+        plot_data = plot_data[(plot_data.Profitability >= n_profit_min-.99) & (plot_data.Profitability <= n_profit_max+.99)]
+
+        n_retail_min = int(plot_data.Retail.min())
+        n_retail_max = int(plot_data.Retail.max())
+        n_profit_min = int(plot_data.Profitability.min())
+        n_profit_max = int(plot_data.Profitability.max())
+
+    # with st.container():
+    #     # st.write(hover_text)
+    #     # Set default min and max values
+    #     # retail_min = int(retail[0])
+    #     # retail_max = int(retail[1])
+
+    #     # Add numeric input boxes to manually set min and max values
+    #     with minretailcol:
+    #         new_min = st.number_input("Retail min", value=retail_min,min_value = retail_min,max_value=retail_max-1,step=5)
+    #     with maxretailcol:
+            # new_max = st.number_input("Retail max", value=retail_max,min_value = retail_min+1,max_value=retail_max,step=5)
 
     # if st.button('Plot Graph'):         
     with st.container():
@@ -118,9 +199,6 @@ if __name__ == "__main__":
 
             minRetail = plot_data.Retail.min().astype(int)
             maxRetail = plot_data.Retail.max().astype(int)
-            # print(minRetail," ",maxRetail)
-            # retail_range = st.slider('Choose Retail range',minRetail, maxRetail, (minRetail, maxRetail))
-            # retail_range = st.slider('Enter Retail range',min_value= minRetail,max_value=maxRetail
 
             st.plotly_chart(profit_graph, use_container_width=True)
             # profit_graph.data[0].on_hover(update_hover_text)
@@ -137,10 +215,22 @@ if __name__ == "__main__":
             # retail_graph.data[0].on_hover(update_hover_text)
     
     # with st.container():
-        # st.write(hover_text)
+    #     # st.write(hover_text)
+    #     # Set default min and max values
+    #     retail_min = int(retail[0])
+    #     retail_max = int(retail[1])
 
+    #     # Add numeric input boxes to manually set min and max values
+    #     with minretailcol:
+    #         new_min = st.number_input("Retail min", value=retail_min,min_value = retail_min,max_value=retail_max-1,step=5)
+    #     with maxretailcol:
+    #         new_max = st.number_input("Retail max", value=retail_max,min_value = retail_min+1,max_value=retail_max,step=5)
+
+
+    #     # Display the selected min and max values
+    #     st.write(f"Selected range: ({new_min}, {new_max})")
+       
 
     # if 'plotData' not in st.session_state:
     st.session_state['plotData'] = plot_data
     
-    st.snow()
