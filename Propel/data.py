@@ -61,6 +61,18 @@ def getModelData(df):
                   'Retail_NCY':'Forecast_NCY'},inplace=True)
     return model_data
 
+
+def getStateData(df,state_choice):
+    df = df[df.State.isin(state_choice)]
+    df = df.groupby(['Model','Date','Country']).agg(Forecast_CY = ('Forecast_CY','sum'),
+                                                                                Forecast_NCY = ('Forecast_NCY','sum'),
+                                                                                Forecast = ('Forecast','sum')).reset_index()
+    # df['State'] = state_list
+    df['Country'] = 'US'
+    df['cumForecast'] = df.groupby(['Model'])['Forecast'].cumsum()
+
+    return df
+
 @st.cache_data(show_spinner="Please wait while we load the model...")
 def get_profitability_data(m_data,promo_amt,duration,dealer_price,coe,ncypenalty):
     # define the start date
@@ -95,7 +107,7 @@ def load_country_data(url):
     
     return model_data
 
-@st.cache_data()
+# @st.cache_data()
 def load_state_data(url):
     df = pd.read_csv(url,low_memory=False)
         
